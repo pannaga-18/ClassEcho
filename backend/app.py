@@ -88,41 +88,102 @@ async def speech_to_text_groq(audio_bytes: bytes) -> str:
 # ✅ 2. Summarize & Structure Notes (using Groq)
 async def summarize_and_structure(text: str) -> dict:
     prompt = f"""
-    You are a helpful note-taking assistant. 
-    From the following transcript, extract topics, headings, and bullet points.
-    Return the result in strict JSON with this format:
+You are an expert note-taking assistant and learning guide. Your task is to transform the following transcript into comprehensive, actionable study notes.
+
+**Instructions:**
+1. Identify and extract all speakers (if mentioned) and attribute their contributions
+2. Organize content into clear topics with descriptive headings
+3. For each topic, provide:
+   - Key points with detailed explanations
+   - Context and additional insights to deepen understanding
+   - Practical examples or applications
+   - Recommended learning resources (books, courses, articles, or tools)
+   - Summary that connects ideas together
+4. Act as a learning guide by highlighting important concepts and suggesting next steps
+
+Return the result in strict JSON with this exact format:
+{{
+  "title": "Descriptive Title of the Lecture/Discussion",
+  "overview": "Brief 2-3 sentence overview of the entire content",
+  "speakers": [
     {{
-      "title": "Lecture Title",
-      "topics": [
-        {{"heading": "Topic 1", "points": ["point A", "point B"]}},
-        {{"heading": "Topic 2", "points": ["point A", "point B"]}}
+      "name": "Speaker Name or 'Unknown' if not mentioned",
+      "role": "Their role or context if mentioned",
+      "key_contributions": ["Main points they discussed"]
+    }}
+  ],
+  "topics": [
+    {{
+      "heading": "Clear Topic Heading",
+      "summary": "2-3 sentence summary of this topic",
+      "key_points": [
+        {{
+          "point": "Main point statement",
+          "explanation": "Detailed explanation with context",
+          "examples": ["Practical example 1", "Practical example 2"],
+          "importance": "Why this matters or how to apply it"
+        }}
+      ],
+      "additional_insights": [
+        "Extra context or connection to other concepts",
+        "Common misconceptions or pitfalls to avoid"
+      ],
+      "recommended_resources": [
+        {{
+          "type": "book|course|article|video|tool|documentation",
+          "title": "Resource name",
+          "description": "Why this resource is helpful",
+          "url": "URL if applicable or 'Search online'"
+        }}
       ]
     }}
+  ],
+  "key_takeaways": [
+    "Most important insight 1",
+    "Most important insight 2",
+    "Most important insight 3"
+  ],
+  "action_items": [
+    "Specific next step or practice exercise 1",
+    "Specific next step or practice exercise 2"
+  ],
+  "further_learning": {{
+    "beginner": ["Resource for those new to the topic"],
+    "intermediate": ["Resource for those with some knowledge"],
+    "advanced": ["Resource for deep diving"]
+  }}
+}}
 
-    Transcript:
-    {text}
-    """
+**Transcript:**
+{text}
 
+**Important:** 
+- If speakers are not identified in the transcript, use "Speaker 1", "Speaker 2" or "Unknown Speaker"
+- Ensure all JSON is properly formatted with correct escaping
+- Provide specific, actionable resource recommendations
+- Keep summaries concise but informative
+- Focus on creating value beyond just transcribing - add insights that help learning
+"""
+    
     response = groq_client.chat.completions.create(
-        model="llama-3.3-70b-versatile",  # or "mixtral-8x7b-32768" for longer contexts
+        model="llama-3.3-70b-versatile",
         messages=[{"role": "user", "content": prompt}],
         temperature=0.2,
-        response_format={"type": "json_object"}  # Groq supports JSON mode
+        response_format={"type": "json_object"}
     )
 
     raw_output = response.choices[0].message.content.strip()
 
-    # Try to parse JSON safely
     try:
         notes = json.loads(raw_output)
     except json.JSONDecodeError:
-        # Fallback: try to extract JSON substring
         start = raw_output.find("{")
         end = raw_output.rfind("}") + 1
         json_str = raw_output[start:end]
         notes = json.loads(json_str)
 
     return notes
+
 
 # ✅ 3. API Endpoint
 @app.post("/process-audio")
