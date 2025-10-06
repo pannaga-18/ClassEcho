@@ -7,10 +7,12 @@ import tempfile
 import os
 import json
 from dotenv import load_dotenv
+from groq import Groq
 
+
+# Load environment variables from .env file
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
-print(f"OpenAI API Key Loaded: {openai.api_key is not None}")
+
 
 
 app = FastAPI(title="ClassEcho")
@@ -48,32 +50,14 @@ async def upload_audio(audio: UploadFile = File(...)):
     # Later: send contents to speech-to-text model
     return {"status": "success", "filename": audio.filename, "size": len(contents)}
 
-from groq import Groq
-import tempfile
-import os
-import json
-from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import JSONResponse
-import openai
 
-app = FastAPI()
+
 
 # Initialize clients
-openai_client = openai.OpenAI()  # for Whisper (speech-to-text)
 groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))  # for note generation
+print(f"Groq API Key Loaded: {os.environ.get('GROQ_API_KEY') is not None}")
 
 
-from groq import Groq
-import tempfile
-import os
-import json
-from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import JSONResponse
-
-app = FastAPI()
-
-# Initialize Groq client
-groq_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 
 
 # ==========================================
